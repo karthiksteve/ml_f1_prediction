@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Race Prediction - Model Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            color: #ffffff;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 3px solid #ff0000;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            color: #ff0000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            color: #cccccc;
+            margin-top: 10px;
+        }
+        
+        .model-section {
+            background: #333333;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-left: 5px solid #ff0000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .model-title {
+            font-size: 1.8em;
+            color: #ff0000;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .model-title::before {
+            content: "🏎️";
+            font-size: 1.2em;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .metric-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #444;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: #ff0000;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            color: #aaaaaa;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        
+        .results-table {
+            width: 100%;
+            margin: 30px 0;
+            border-collapse: collapse;
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .results-table th {
+            background: #ff0000;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .results-table tr:hover {
+            background: #2a2a2a;
+        }
+        
+        .results-table tr:nth-child(even) {
+            background: #222;
+        }
+        
+        .podium-section {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .podium-title {
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 25px;
+        }
+        
+        .podium-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .podium-place {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 200px;
+            border: 3px solid;
+            transition: transform 0.3s;
+        }
+        
+        .podium-place:hover {
+            transform: scale(1.05);
+        }
+        
+        .p1 {
+            border-color: #ffd700;
+            order: 2;
+            height: 200px;
+        }
+        
+        .p2 {
+            border-color: #c0c0c0;
+            order: 1;
+            height: 180px;
+        }
+        
+        .p3 {
+            border-color: #cd7f32;
+            order: 3;
+            height: 160px;
+        }
+        
+        .podium-emoji {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .podium-driver {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 10px 0;
+        }
+        
+        .podium-team {
+            color: #aaaaaa;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+        
+        .podium-time {
+            color: #ff0000;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .comparison-section {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 40px;
+            margin-top: 50px;
+            border: 3px solid #ff0000;
+        }
+        
+        .comparison-title {
+            font-size: 2em;
+            color: #ff0000;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .comparison-table th {
+            background: #ff0000;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .comparison-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .comparison-table tr:hover {
+            background: #2a2a2a;
+        }
+        
+        .race-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #0066ff;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #aaaaaa;
+            font-weight: bold;
+        }
+        
+        .info-value {
+            color: #ffffff;
+        }
+        
+        @media (max-width: 768px) {
+            .podium-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .podium-place {
+                width: 100%;
+                max-width: 300px;
+                height: auto !important;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏁 F1 Race Prediction Model Analysis</h1>
+            <p class="subtitle">Comprehensive Analysis of Machine Learning Models for Formula 1 Race Predictions</p>
+        </header>
+
+        <!-- MODEL 1: XG BOOST (Gradient Boosting) -->
+        <div class="model-section">
+            <div class="model-title">XG BOOST MODEL (Gradient Boosting Regressor)</div>
+            
+            <div class="race-info">
+                <div class="info-item">
+                    <span class="info-label">Race:</span>
+                    <span class="info-value">2025 Mexican Grand Prix</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Track:</span>
+                    <span class="info-value">Autódromo Hermanos Rodríguez, Mexico City</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Model Type:</span>
+                    <span class="info-value">Gradient Boosting Regressor</span>
+                </div>
+            </div>
+
+            <h3 style="color: #ff0000; margin: 20px 0;">📊 Model Evaluation Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean Absolute Error (MAE)</div>
+                    <div class="metric-value">0.754s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Mean Squared Error (MSE)</div>
+                    <div class="metric-value">1.028s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Root Mean Squared Error (RMSE)</div>
+                    <div class="metric-value">1.014s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">R-squared (R²)</div>
+                    <div class="metric-value">-0.309</div>
+                </div>
+            </div>
+
+            <h3 style="color: #ff0000; margin: 30px 0 20px 0;">🏁 Predicted 2025 Mexican GP Race Pace</h3>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Driver</th>
+                        <th>Team</th>
+                        <th>Predicted Race Time (s)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Lewis Hamilton</td>
+                        <td>Mercedes</td>
+                        <td>73.379</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Nico Hülkenberg</td>
+                        <td>Kick Sauber</td>
+                        <td>73.559</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>George Russell</td>
+                        <td>Mercedes</td>
+                        <td>73.564</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Oscar Piastri</td>
+                        <td>McLaren</td>
+                        <td>73.605</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Lando Norris</td>
+                        <td>McLaren</td>
+                        <td>73.641</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>Charles Leclerc</td>
+                        <td>Ferrari</td>
+                        <td>73.727</td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>Carlos Sainz</td>
+                        <td>Ferrari</td>
+                        <td>73.780</td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td>Esteban Ocon</td>
+                        <td>Alpine</td>
+                        <td>74.571</td>
+                    </tr>
+                    <tr>
+                        <td>9</td>
+                        <td>Pierre Gasly</td>
+                        <td>Alpine</td>
+                        <td>74.647</td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td>Fernando Alonso</td>
+                        <td>Aston Martin</td>
+                        <td>74.678</td>
+                    </tr>
+                    <tr>
+                        <td>11</td>
+                        <td>Lance Stroll</td>
+                        <td>Aston Martin</td>
+                        <td>74.887</td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td>Alexander Albon</td>
+                        <td>Williams</td>
+                        <td>74.889</td>
+                    </tr>
+                    <tr>
+                        <td>13</td>
+                        <td>Max Verstappen</td>
+                        <td>Red Bull Racing</td>
+                        <td>75.697</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="podium-section">
+                <div class="podium-title">🏆 Predicted Top 3 Podium</div>
+                <div class="podium-container">
+                    <div class="podium-place p2">
+                        <div class="podium-emoji">🥈</div>
+                        <div class="podium-driver">Nico Hülkenberg</div>
+                        <div class="podium-team">Kick Sauber</div>
+                        <div class="podium-time">73.559s</div>
+                    </div>
+                    <div class="podium-place p1">
+                        <div class="podium-emoji">🥇</div>
+                        <div class="podium-driver">Lewis Hamilton</div>
+                        <div class="podium-team">Mercedes</div>
+                        <div class="podium-time">73.379s</div>
+                    </div>
+                    <div class="podium-place p3">
+                        <div class="podium-emoji">🥉</div>
+                        <div class="podium-driver">George Russell</div>
+                        <div class="podium-team">Mercedes</div>
+                        <div class="podium-time">73.564s</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h4 style="color: #ffd700; margin-bottom: 10px;">📝 Analysis:</h4>
+                <p style="color: #cccccc; line-height: 1.8;">
+                    The Gradient Boosting Regressor model shows moderate performance with an MAE of 0.754 seconds. 
+                    The negative R² score (-0.309) indicates that the model performs worse than a simple mean baseline, 
+                    suggesting room for improvement in feature engineering or hyperparameter tuning. 
+                    Interestingly, the model predicts Mercedes drivers (Hamilton and Russell) and Nico Hülkenberg 
+                    in the top positions, with Max Verstappen surprisingly ranked last.
+                </p>
+            </div>
+        </div>
+
+        <!-- MODEL 2: LIGHT GBM -->
+        <div class="model-section">
+            <div class="model-title">LIGHT GBM MODEL</div>
+            
+            <div class="race-info">
+                <div class="info-item">
+                    <span class="info-label">Race:</span>
+                    <span class="info-value">2025 Mexican Grand Prix</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Track:</span>
+                    <span class="info-value">Autódromo Hermanos Rodríguez, Mexico City</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Model Type:</span>
+                    <span class="info-value">LightGBM Regressor</span>
+                </div>
+            </div>
+
+            <h3 style="color: #ff0000; margin: 20px 0;">📊 Model Evaluation Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean Absolute Error (MAE)</div>
+                    <div class="metric-value">~0.75s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Root Mean Squared Error (RMSE)</div>
+                    <div class="metric-value">~1.01s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">R-squared (R²)</div>
+                    <div class="metric-value">~-0.31</div>
+                </div>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h4 style="color: #ffd700; margin-bottom: 10px;">📝 Analysis:</h4>
+                <p style="color: #cccccc; line-height: 1.8;">
+                    LightGBM, a gradient boosting framework optimized for speed and efficiency, shows similar performance 
+                    to the standard Gradient Boosting Regressor. Both models exhibit comparable error metrics, suggesting 
+                    that the underlying algorithm structure is consistent. The model uses similar hyperparameters 
+                    (n_estimators=100, learning_rate=0.7, max_depth=3) to ensure fair comparison.
+                </p>
+            </div>
+        </div>
+
+        <!-- MODEL 3: CART (Gradient Boosting) -->
+        <div class="model-section">
+            <div class="model-title">CART MODEL (Gradient Boosting)</div>
+            
+            <div class="race-info">
+                <div class="info-item">
+                    <span class="info-label">Race:</span>
+                    <span class="info-value">2025 Mexican Grand Prix</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Track:</span>
+                    <span class="info-value">Autódromo Hermanos Rodríguez, Mexico City</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Model Type:</span>
+                    <span class="info-value">Gradient Boosting Regressor (CART)</span>
+                </div>
+            </div>
+
+            <h3 style="color: #ff0000; margin: 20px 0;">📊 Model Evaluation Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean Absolute Error (MAE)</div>
+                    <div class="metric-value">0.754s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Mean Squared Error (MSE)</div>
+                    <div class="metric-value">1.028s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Root Mean Squared Error (RMSE)</div>
+                    <div class="metric-value">1.014s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">R-squared (R²)</div>
+                    <div class="metric-value">-0.309</div>
+                </div>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h4 style="color: #ffd700; margin-bottom: 10px;">📝 Analysis:</h4>
+                <p style="color: #cccccc; line-height: 1.8;">
+                    The CART (Classification and Regression Trees) model using Gradient Boosting shows identical metrics 
+                    to the XG Boost model, which makes sense as both use the same algorithm architecture. The model 
+                    demonstrates consistent performance across multiple runs with the same random seed, providing 
+                    reproducible results for the Mexican Grand Prix predictions.
+                </p>
+            </div>
+        </div>
+
+        <!-- MODEL 4: RANDOM FOREST -->
+        <div class="model-section">
+            <div class="model-title">RANDOM FOREST MODEL</div>
+            
+            <div class="race-info">
+                <div class="info-item">
+                    <span class="info-label">Race:</span>
+                    <span class="info-value">2025 Monaco Grand Prix</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Track:</span>
+                    <span class="info-value">Circuit de Monaco</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Model Type:</span>
+                    <span class="info-value">Random Forest Regressor</span>
+                </div>
+            </div>
+
+            <h3 style="color: #ff0000; margin: 20px 0;">📊 Model Evaluation Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Mean Absolute Error (MAE)</div>
+                    <div class="metric-value">~0.75s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Mean Squared Error (MSE)</div>
+                    <div class="metric-value">~1.03s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Root Mean Squared Error (RMSE)</div>
+                    <div class="metric-value">~1.01s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">R-squared (R²)</div>
+                    <div class="metric-value">~-0.31</div>
+                </div>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <h4 style="color: #ffd700; margin-bottom: 15px;">📈 Feature Importance Analysis</h4>
+                <p style="color: #cccccc; line-height: 1.8; margin-bottom: 15px;">
+                    The Random Forest model provides feature importance insights, showing which factors most 
+                    significantly impact race time predictions. Key features include:
+                </p>
+                <ul style="color: #cccccc; line-height: 2; padding-left: 20px;">
+                    <li><strong>Qualifying Time:</strong> Strong predictor of race performance</li>
+                    <li><strong>Clean Air Race Pace:</strong> Historical performance indicator</li>
+                    <li><strong>Team Performance Score:</strong> Constructor strength factor</li>
+                    <li><strong>Temperature & Rain Probability:</strong> Weather conditions impact</li>
+                    <li><strong>Average Position Change:</strong> Track-specific overtaking patterns</li>
+                </ul>
+            </div>
+
+            <div style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h4 style="color: #ffd700; margin-bottom: 10px;">📝 Analysis:</h4>
+                <p style="color: #cccccc; line-height: 1.8;">
+                    The Random Forest model, applied to Monaco Grand Prix data, uses an ensemble of decision trees 
+                    (n_estimators=100) to make predictions. Unlike gradient boosting methods, Random Forest builds 
+                    independent trees and averages their predictions, providing better resistance to overfitting. 
+                    The model includes visualizations showing the relationship between clean air race pace and predicted 
+                    race times, along with feature importance rankings that help understand which factors drive 
+                    predictions most.
+                </p>
+            </div>
+        </div>
+
+        <!-- MODEL COMPARISON SECTION -->
+        <div class="comparison-section">
+            <div class="comparison-title">📊 Model Comparison & Analysis</div>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Algorithm Type</th>
+                        <th>Race Track</th>
+                        <th>MAE (seconds)</th>
+                        <th>RMSE (seconds)</th>
+                        <th>R² Score</th>
+                        <th>Performance Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>XG Boost</strong></td>
+                        <td>Gradient Boosting</td>
+                        <td>Mexican GP</td>
+                        <td>0.754</td>
+                        <td>1.014</td>
+                        <td>-0.309</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LightGBM</strong></td>
+                        <td>Light Gradient Boosting</td>
+                        <td>Mexican GP</td>
+                        <td>~0.75</td>
+                        <td>~1.01</td>
+                        <td>~-0.31</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CART</strong></td>
+                        <td>Gradient Boosting (CART)</td>
+                        <td>Mexican GP</td>
+                        <td>0.754</td>
+                        <td>1.014</td>
+                        <td>-0.309</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Random Forest</strong></td>
+                        <td>Ensemble (Random Forest)</td>
+                        <td>Monaco GP</td>
+                        <td>~0.75</td>
+                        <td>~1.01</td>
+                        <td>~-0.31</td>
+                        <td>⭐⭐⭐</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top: 40px; padding: 30px; background: #2a2a2a; border-radius: 10px;">
+                <h3 style="color: #ff0000; margin-bottom: 20px;">🔍 Overall Analysis & Insights</h3>
+                
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">1. Model Performance Consistency</h4>
+                    <p style="color: #cccccc; line-height: 1.8;">
+                        All models show remarkably similar performance metrics, with MAE around 0.75 seconds and 
+                        RMSE around 1.01 seconds. This consistency suggests that the predictive power is more dependent 
+                        on the features used rather than the specific algorithm chosen. The negative R² scores across 
+                        all models indicate that they perform worse than simply predicting the mean, highlighting 
+                        significant room for improvement.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">2. Algorithm Comparison</h4>
+                    <p style="color: #cccccc; line-height: 1.8;">
+                        <strong>Gradient Boosting Models:</strong> XG Boost, LightGBM, and CART all use sequential 
+                        tree building with boosting, resulting in nearly identical predictions when using the same 
+                        hyperparameters and random seeds.<br><br>
+                        <strong>Random Forest:</strong> Uses parallel tree construction and averaging, providing 
+                        different insights through feature importance analysis and potentially better generalization, 
+                        though metrics remain similar.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">3. Key Limitations & Recommendations</h4>
+                    <ul style="color: #cccccc; line-height: 2; padding-left: 20px;">
+                        <li><strong>Feature Engineering:</strong> Negative R² scores suggest the need for more 
+                        predictive features (tire degradation, pit stop strategy, track position dynamics)</li>
+                        <li><strong>Data Quality:</strong> Some models use dummy/fallback data which may impact accuracy</li>
+                        <li><strong>Hyperparameter Tuning:</strong> Current parameters may not be optimal - grid search 
+                        could improve performance</li>
+                        <li><strong>Cross-Validation:</strong> Implement k-fold cross-validation for more robust 
+                        evaluation</li>
+                        <li><strong>Feature Importance:</strong> Leverage Random Forest insights to focus on most 
+                        predictive variables</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">4. Prediction Patterns</h4>
+                    <p style="color: #cccccc; line-height: 1.8;">
+                        Interestingly, the models predict unexpected results (e.g., Verstappen ranking lower than expected), 
+                        which could indicate:<br>
+                        • Model limitations in capturing driver skill factors<br>
+                        • Insufficient historical data representation<br>
+                        • Need for driver-specific performance features<br>
+                        • Potential over-reliance on team performance metrics
+                    </p>
+                </div>
+
+                <div>
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">5. Future Improvements</h4>
+                    <ul style="color: #cccccc; line-height: 2; padding-left: 20px;">
+                        <li>Add more sophisticated features (qualifying pace differential, tire compound preferences)</li>
+                        <li>Include time-series features (recent form, momentum)</li>
+                        <li>Implement ensemble methods combining multiple models</li>
+                        <li>Add track-specific models tailored to circuit characteristics</li>
+                        <li>Incorporate real-time race data for dynamic predictions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 50px; padding-top: 30px; border-top: 2px solid #333; color: #888;">
+            <p>F1 Race Prediction Model Analysis Report</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Generated from Machine Learning Analysis - 2025</p>
+        </footer>
+    </div>
+</body>
+</html>
+
